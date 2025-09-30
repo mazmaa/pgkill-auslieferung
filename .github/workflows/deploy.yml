@@ -1,0 +1,64 @@
+# .github/workflows/deploy.yml
+
+name: Deploy Vite App to GitHub Pages
+
+# Dieser Workflow startet automatisch bei jedem Push auf den "main"-Branch
+on:
+  push:
+    branches: [ "main" ]
+  # Erlaubt auch, den Workflow manuell im "Actions"-Tab zu starten
+  workflow_dispatch:
+
+# Nötige Berechtigungen für den Job, um die Seite zu veröffentlichen
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    # Konfiguriert die Ziel-Umgebung als GitHub Pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    # Der Job läuft auf einem von GitHub bereitgestellten Linux-Server
+    runs-on: ubuntu-latest
+
+    steps:
+      # Schritt 1: Holt den aktuellen Code aus Ihrem Repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Schritt 2: Richtet die Node.js-Umgebung ein
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Verwendet eine aktuelle Node.js-Version
+          cache: 'npm'       # Beschleunigt zukünftige Builds durch Caching
+
+      # Schritt 3: Installiert alle Projektabhängigkeiten (wie bootstrap, react, etc.)
+      - name: Install dependencies
+        run: npm install
+
+      # Schritt 4: Baut Ihre React-App (führt "npm run build" aus)
+      # Das erstellt den finalen "dist"-Ordner.
+      - name: Build application
+        run: npm run build
+
+      # Schritt 5: Bereitet den Upload-Prozess für GitHub Pages vor
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # Schritt 6: Lädt den Inhalt des "dist"-Ordners als "Artefakt" hoch
+      # Ein Artefakt ist ein Ergebnis eines Build-Prozesses.
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Der Pfad zum Ordner, der hochgeladen werden soll
+          path: './dist'
+
+      # Schritt 7: Liefert das hochgeladene Artefakt auf GitHub Pages aus
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
